@@ -184,21 +184,29 @@ export class SpectrumChart {
     }
 
     /**
-     * @param {Float32Array} samples     - Time-domain input (will be windowed internally)
-     * @param {number}       fftSize     - Power-of-2 FFT window size
-     * @param {number}       sampleRateHz
-     * @param {number}       adcMax
-     * @param {string}       color
-     * @param {boolean}      useDb       - Show dBFS instead of linear
+     * @param {{name:string, samples:Float32Array, color:string}[]} channels
+     * @param {number}  fftSize
+     * @param {number}  sampleRateHz
+     * @param {number}  adcMax
+     * @param {boolean} useDb
      */
-    render(samples, fftSize, sampleRateHz, adcMax, color, useDb) {
+    render(channels, fftSize, sampleRateHz, adcMax, useDb) {
         const { ctx, canvas } = this;
         const p = plotArea(canvas);
 
         clearCanvas(ctx, canvas);
 
-        // Need at least fftSize samples
-        const actualSize = Math.min(fftSize, prevPow2(samples.length));
+        if (!channels.length) {
+            ctx.fillStyle = LABEL;
+            ctx.font      = FONT;
+            ctx.textAlign = "center";
+            ctx.fillText("No analog channels visible", canvas.width / 2, canvas.height / 2);
+            return;
+        }
+
+        // Determine actual FFT size from available samples
+        const maxSamples = Math.max(...channels.map(c => c.samples.length));
+        const actualSize = Math.min(fftSize, prevPow2(maxSamples));
         if (actualSize < 4) {
             ctx.fillStyle = LABEL;
             ctx.font      = FONT;
@@ -207,34 +215,56 @@ export class SpectrumChart {
             return;
         }
 
-        const slice = samples.slice(samples.length - actualSize);
-        const mag   = computeSpectrum(slice);
-        const data  = useDb ? toDb(mag, adcMax) : mag;
-
         drawGrid(ctx, p, 10, 8);
-        this._drawBars(data, p, useDb, adcMax, color);
+
+        // Draw each channel overlaid
+        for (const { samples, color } of channels) {
+            const size  = Math.min(actualSize, prevPow2(samples.length));
+            if (size < 4) continue;
+            const slice = samples.slice(samples.length - size);
+            const mag   = computeSpectrum(slice);
+            const data  = useDb ? toDb(mag, adcMax) : mag;
+            this._drawLine(data, p, useDb, adcMax, color);
+        }
+
         this._drawAxes(p, sampleRateHz, actualSize, useDb, adcMax);
     }
 
-    _drawBars(data, { x0, y0, w, h }, useDb, adcMax, color) {
+    // Draw spectrum as a filled line (more readable when channels overlap than solid bars)
+    _drawLine(data, { x0, y0, w, h }, useDb, adcMax, color) {
         const { ctx } = this;
         const n    = data.length;
-        const bw   = Math.max(1, w / n);
-
-        // Y range
         const yMin = useDb ? -80 : 0;
         const yMax = useDb ?   0 : adcMax / 2;
         const range = yMax - yMin;
 
-        ctx.fillStyle = color + "cc";   // slight transparency
-
+        // Filled area under the line
+        ctx.beginPath();
+        ctx.moveTo(x0, y0 + h);
         for (let i = 0; i < n; i++) {
-            const v      = Math.max(yMin, Math.min(yMax, data[i]));
-            const norm   = (v - yMin) / range;
-            const barH   = norm * h;
-            const x      = x0 + (i / n) * w;
-            ctx.fillRect(x, y0 + h - barH, bw - 0.5, barH);
+            const v    = Math.max(yMin, Math.min(yMax, data[i]));
+            const norm = (v - yMin) / range;
+            const x    = x0 + (i / (n - 1)) * w;
+            const y    = y0 + h - norm * h;
+            i === 0 ? ctx.lineTo(x, y) : ctx.lineTo(x, y);
         }
+        ctx.lineTo(x0 + w, y0 + h);
+        ctx.closePath();
+        ctx.fillStyle = color + "33";   // very transparent fill
+        ctx.fill();
+
+        // Solid line on top
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = 1.5;
+        for (let i = 0; i < n; i++) {
+            const v    = Math.max(yMin, Math.min(yMax, data[i]));
+            const norm = (v - yMin) / range;
+            const x    = x0 + (i / (n - 1)) * w;
+            const y    = y0 + h - norm * h;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
     }
 
     _drawAxes({ x0, y0, w, h }, sampleRateHz, fftSize, useDb, adcMax) {

@@ -7,7 +7,6 @@ import { RingBuffer, TimeChart, SpectrumChart } from "./charts.js";
 import {
     setConnectionStatus, setPortLabel, setSampleRateDisplay,
     buildBoardSelect, buildRateControls, buildWindowControl,
-    buildSpectrumControls, updateSpectrumChannelOptions,
     buildStreamToggle, buildTimeLegend, buildDigitalToggle,
 } from "./ui.js";
 
@@ -33,7 +32,6 @@ const state = {
 
     timeWindowSec: 5,
     fftSize:       512,
-    specChannel:   null,
     useDb:         true,
     streaming:     true,
     digitalOnly:   false,       // show only digital channels when true
@@ -100,13 +98,8 @@ function onChannelsUpdate(channels) {
         state.visibleSet.add(name);
     }
 
-    // Default spectrum channel
-    if (!state.specChannel || !channels.includes(state.specChannel))
-        state.specChannel = channels.find(n => n !== "t") ?? null;
-
-    // Rebuild legend and spectrum selector
+    // Rebuild legend
     buildTimeLegend(channels, state.visibleSet, state.colors, onLegendToggle);
-    updateSpectrumChannelOptions(channels, state.specChannel);
     
     // Update visibility based on digitalOnly setting
     updateChannelVisibility();
@@ -220,7 +213,6 @@ function onBoardChange(boardId) {
     state.buffers.clear();
     state.colors.clear();
     state.colorIdx    = 0;
-    state.specChannel = null;
     state._lastTs     = null;
     state.sampleRateHz = board.defaultSampleRate;
     sendCmd({ cmd: "header" });
@@ -244,12 +236,11 @@ function init() {
         state.timeWindowSec = sec;
     });
 
-    buildSpectrumControls(
-        [], state.specChannel, state.fftSize, state.useDb,
-        (ch)   => { state.specChannel = ch; },
-        (size) => { state.fftSize = size; },
-        (db)   => { state.useDb = db; },
-    );
+    // FFT size + dBFS toggle (spectrum channel selector removed — all visible shown)
+    document.getElementById("fft-size")
+        .addEventListener("change", (e) => { state.fftSize = parseInt(e.target.value, 10); });
+    document.getElementById("db-toggle")
+        .addEventListener("change", (e) => { state.useDb = e.target.checked; });
 
     buildStreamToggle(state.streaming, (on) => {
         state.streaming = on;
