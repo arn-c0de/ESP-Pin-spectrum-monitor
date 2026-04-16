@@ -24,14 +24,6 @@
     <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
     <aside id="sidebar">
 
-        <!-- Channels -->
-        <div class="panel">
-            <div class="panel-title">Channels</div>
-            <div id="channel-list">
-                <span style="color:var(--muted);font-size:11px">Waiting for device…</span>
-            </div>
-        </div>
-
         <!-- Sample rate -->
         <div class="panel">
             <div class="panel-title">Sample Rate</div>
@@ -66,6 +58,7 @@
         <div class="chart-panel">
             <div class="chart-header">
                 <h2>Time Domain</h2>
+                <div id="time-legend" class="chart-legend"></div>
             </div>
             <canvas id="time-canvas"></canvas>
         </div>

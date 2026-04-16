@@ -8,6 +8,21 @@
 
 import { computeSpectrum, toDb, prevPow2 } from "./fft.js";
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Scale digital (0/1) samples to LOW=10% / HIGH=90% of adcMax
+ * so they appear as a full-height logic signal, not a flat line near 0.
+ */
+function scaleDigital(samples, adcMax) {
+    const lo = adcMax * 0.05;
+    const hi = adcMax * 0.90;
+    const out = new Float32Array(samples.length);
+    for (let i = 0; i < samples.length; i++)
+        out[i] = samples[i] ? hi : lo;
+    return out;
+}
+
 // ── Shared drawing helpers ─────────────────────────────────────────────────────
 
 const PAD   = { top: 16, right: 16, bottom: 36, left: 56 };
@@ -81,14 +96,15 @@ export class TimeChart {
     }
 
     /**
-     * @param {string[]}           activeChannels - Names of enabled channels (excludes "t")
+     * @param {string[]}                visibleChannels - channel names to draw (excludes "t")
      * @param {Map<string, RingBuffer>} buffers
-     * @param {Map<string, string>}    colors       - channel → CSS colour
-     * @param {number}             adcMax
-     * @param {number}             sampleRateHz  - estimated sample rate
-     * @param {number}             timeWindowSec - visible window width
+     * @param {Map<string, string>}     colors          - channel → CSS colour
+     * @param {Set<string>}             digitalSet      - channels that output 0/1 only
+     * @param {number}                  adcMax
+     * @param {number}                  sampleRateHz
+     * @param {number}                  timeWindowSec
      */
-    render(activeChannels, buffers, colors, adcMax, sampleRateHz, timeWindowSec) {
+    render(visibleChannels, buffers, colors, digitalSet, adcMax, sampleRateHz, timeWindowSec) {
         const { ctx, canvas } = this;
         const p = plotArea(canvas);
 
@@ -97,19 +113,21 @@ export class TimeChart {
 
         const nSamples = Math.max(2, Math.round(sampleRateHz * timeWindowSec));
 
-        for (const name of activeChannels) {
+        for (const name of visibleChannels) {
             const buf = buffers.get(name);
             if (!buf || buf.count < 2) continue;
-            const samples = buf.last(nSamples);
-            this._drawSignal(samples, p, adcMax, colors.get(name) ?? "#ffffff", name);
+            const raw     = buf.last(nSamples);
+            // Digital channels (0/1): scale to full Y range so they're clearly visible
+            const samples = digitalSet.has(name) ? scaleDigital(raw, adcMax) : raw;
+            this._drawSignal(samples, p, adcMax, colors.get(name) ?? "#ffffff");
         }
 
         this._drawAxes(p, adcMax, timeWindowSec, sampleRateHz);
     }
 
-    _drawSignal(samples, { x0, y0, w, h }, adcMax, color, label) {
+    _drawSignal(samples, { x0, y0, w, h }, adcMax, color) {
         const { ctx } = this;
-        const n = samples.length;
+        const n     = samples.length;
         const xStep = w / (n - 1);
 
         ctx.beginPath();
@@ -123,12 +141,6 @@ export class TimeChart {
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
         ctx.stroke();
-
-        // Channel label at the right edge
-        const lastY = y0 + h - (samples[n - 1] / adcMax) * h;
-        ctx.fillStyle = color;
-        ctx.font      = FONT;
-        ctx.fillText(label, x0 + w + 4, Math.max(y0 + 8, Math.min(y0 + h - 2, lastY + 4)));
     }
 
     _drawAxes({ x0, y0, w, h }, adcMax, timeWindowSec, sampleRateHz) {

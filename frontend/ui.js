@@ -48,52 +48,44 @@ export function buildBoardSelect(currentBoardId, onBoardChange) {
     sel.addEventListener("change", () => onBoardChange(sel.value));
 }
 
-// ── Channel list ───────────────────────────────────────────────────────────────
+// ── Chart legend (time domain) ────────────────────────────────────────────────
 
 /**
- * Rebuild the channel list in the sidebar.
- * @param {string[]}              channelNames - From CHANNELS: header (minus "t")
- * @param {Set<string>}           enabledSet   - Which channels are currently enabled
- * @param {Map<string, string>}   colors
- * @param {(name:string, on:boolean) => void} onToggle
+ * Build clickable colour-coded badges in the time-domain chart header.
+ * Clicking a badge toggles the channel's visibility in the graph.
+ *
+ * @param {string[]}            channelNames
+ * @param {Set<string>}         visibleSet
+ * @param {Map<string, string>} colors
+ * @param {(name:string, visible:boolean) => void} onToggle
  */
-export function buildChannelList(channelNames, enabledSet, colors, onToggle) {
-    const list = document.getElementById("channel-list");
-    list.innerHTML = "";
+export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
+    const container = document.getElementById("time-legend");
+    container.innerHTML = "";
 
     for (const name of channelNames) {
         if (name === "t") continue;
 
-        const row   = document.createElement("div");
-        row.className = "ch-row";
+        const badge = document.createElement("span");
+        badge.className   = "legend-badge";
+        badge.dataset.ch  = name;
+        badge.title       = `Click to show/hide ${name}`;
+        if (!visibleSet.has(name)) badge.classList.add("hidden");
 
-        const dot   = document.createElement("span");
-        dot.className = "ch-dot";
+        const dot = document.createElement("span");
+        dot.className        = "legend-dot";
         dot.style.background = colors.get(name) ?? "#8b949e";
 
-        const label = document.createElement("span");
-        label.className  = "ch-label";
-        label.textContent = name;
+        badge.appendChild(dot);
+        badge.appendChild(document.createTextNode(name));
 
-        const toggle = document.createElement("input");
-        toggle.type    = "checkbox";
-        toggle.checked = enabledSet.has(name);
-        toggle.addEventListener("change", () => onToggle(name, toggle.checked));
+        badge.addEventListener("click", () => {
+            const nowHidden = badge.classList.toggle("hidden");
+            onToggle(name, !nowHidden);
+        });
 
-        row.appendChild(dot);
-        row.appendChild(label);
-        row.appendChild(toggle);
-        list.appendChild(row);
+        container.appendChild(badge);
     }
-}
-
-/** Update only the checked state without rebuilding the list. */
-export function syncChannelToggles(enabledSet) {
-    document.querySelectorAll("#channel-list .ch-row").forEach((row) => {
-        const name   = row.querySelector(".ch-label").textContent;
-        const toggle = row.querySelector("input[type=checkbox]");
-        toggle.checked = enabledSet.has(name);
-    });
 }
 
 // ── Rate controls ─────────────────────────────────────────────────────────────
