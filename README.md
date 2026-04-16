@@ -1,5 +1,10 @@
 # ESP Pin Spectrum Monitor
 
+![Arduino](https://img.shields.io/badge/Arduino-00979D?style=for-the-badge&logo=arduino&logoColor=white)
+![ESP32](https://img.shields.io/badge/ESP32-E7352C?style=for-the-badge&logo=espressif&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+
 > **Note:** This repository is for private testing and evaluation purposes only.
 
 A real-time GPIO monitoring and spectrum analysis tool for Arduino and ESP32 boards.
