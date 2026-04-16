@@ -209,7 +209,7 @@ export function buildStreamToggle(streaming, onToggle) {
 
 function _syncStreamBtn(btn, streaming) {
     btn.dataset.streaming = streaming;
-    btn.textContent       = streaming ? "⏸ Pause" : "▶ Resume";
+    btn.textContent       = streaming ? "Pause" : "Resume";
     btn.classList.toggle("btn-paused", !streaming);
 }
 

@@ -4,6 +4,27 @@
  * All functions are pure (no side-effects on global state).
  */
 
+// Cache for pre-calculated twiddle factors (sin/cos)
+const twiddleCache = new Map();
+
+/**
+ * Get or create cached twiddle factors for a given FFT size.
+ */
+function getTwiddleFactors(n) {
+    if (!twiddleCache.has(n)) {
+        const factors = new Map();
+        for (let len = 2; len <= n; len <<= 1) {
+            const ang = -2 * Math.PI / len;
+            factors.set(len, {
+                wRe: Math.cos(ang),
+                wIm: Math.sin(ang)
+            });
+        }
+        twiddleCache.set(n, factors);
+    }
+    return twiddleCache.get(n);
+}
+
 /**
  * In-place radix-2 FFT.
  * @param {Float32Array} re - Real part (modified in place)
@@ -11,6 +32,7 @@
  */
 export function fft(re, im) {
     const n = re.length;
+    const twiddles = getTwiddleFactors(n);
 
     // Bit-reversal permutation
     for (let i = 1, j = 0; i < n; i++) {
@@ -26,9 +48,7 @@ export function fft(re, im) {
 
     // Danielson-Lanczos butterfly
     for (let len = 2; len <= n; len <<= 1) {
-        const ang  = -2 * Math.PI / len;
-        const wRe  = Math.cos(ang);
-        const wIm  = Math.sin(ang);
+        const { wRe, wIm } = twiddles.get(len);
 
         for (let i = 0; i < n; i += len) {
             let curRe = 1.0, curIm = 0.0;
@@ -53,6 +73,23 @@ export function fft(re, im) {
     }
 }
 
+// Cache for pre-calculated Hann window coefficients
+const hannWindowCache = new Map();
+
+/**
+ * Get or create cached Hann window coefficients for a given size.
+ */
+function getHannWindow(n) {
+    if (!hannWindowCache.has(n)) {
+        const window = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+            window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (n - 1)));
+        }
+        hannWindowCache.set(n, window);
+    }
+    return hannWindowCache.get(n);
+}
+
 /**
  * Compute single-sided magnitude spectrum with Hann window.
  *
@@ -64,10 +101,10 @@ export function computeSpectrum(samples) {
     const re = new Float32Array(n);
     const im = new Float32Array(n);
 
-    // Apply Hann window
+    // Apply cached Hann window
+    const window = getHannWindow(n);
     for (let i = 0; i < n; i++) {
-        const w = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (n - 1)));
-        re[i]   = samples[i] * w;
+        re[i] = samples[i] * window[i];
     }
 
     fft(re, im);

@@ -44,25 +44,18 @@ done
 PY_VERSION=$("$PYTHON" -c "import sys; print(sys.version_info.major)")
 [[ "$PY_VERSION" -ge 3 ]] || die "Python 3 required (found: $("$PYTHON" --version))"
 
-# ── Check / install dependencies ──────────────────────────────────────────────
-check_deps() {
-    local missing=()
-    "$PYTHON" -c "import serial"    2>/dev/null || missing+=("pyserial")
-    "$PYTHON" -c "import websockets" 2>/dev/null || missing+=("websockets")
+# ── Check / activate virtual environment ──────────────────────────────────────
+VENV_DIR="$SCRIPT_DIR/.venv"
 
-    if [[ ${#missing[@]} -gt 0 ]]; then
-        warn "Missing Python packages: ${missing[*]}"
-        read -rp "  Install now with pip? [Y/n] " REPLY
-        if [[ "${REPLY,,}" != "n" ]]; then
-            "$PYTHON" -m pip install "${missing[@]}"
-        else
-            die "Install them manually: pip install ${missing[*]}"
-        fi
-    fi
-}
+if [[ ! -d "$VENV_DIR" ]]; then
+    warn "Virtual environment not found. Running install.sh first..."
+    ./install.sh
+fi
 
-info "Python : $("$PYTHON" --version)"
-check_deps
+source "$VENV_DIR/bin/activate" || die "Failed to activate virtual environment."
+PYTHON="python"
+
+info "Python : $(python --version)"
 
 # ── Optional port argument ────────────────────────────────────────────────────
 PORT_ARG="${1:-}"
@@ -75,4 +68,4 @@ info "WebSocket: ws://localhost:8765"
 echo
 
 cd "$BACKEND_DIR"
-exec "$PYTHON" bridge.py "$PORT_ARG"
+exec "$PYTHON" bridge.py "${PORT_ARG:-}"

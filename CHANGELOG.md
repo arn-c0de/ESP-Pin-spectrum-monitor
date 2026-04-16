@@ -7,20 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.1] - 2024-04-16
 
-### Security
-- Fixed shell injection vulnerability in `start-server.sh` by quoting the `$PORT_ARG` variable.
-- Fixed invalid dependency `websockets>=16.0` by updating to `websockets>=16.0`.
-- Addressed serial command injection in `ws_server.py` by sanitizing WebSocket inputs.
-- Restricted default server binding to `127.0.0.1` to prevent unprotected network exposure.
+### Added
+- Created install.sh script for automated virtual environment (venv) and dependency management.
+- Created MANUAL.md with hardware voltage limits and detailed usage instructions.
+- Implemented Twiddle Factor Look-Up Tables (LUT) in fft.js for significantly improved CPU efficiency.
+- Added forEachLast to RingBuffer in charts.js for allocation-free rendering, eliminating GC pauses.
 
-### Fixed
-- Updated `requirements.txt` to use a valid version of the `websockets` package.
-- Improved input validation in `flash.sh` to prevent potential directory traversal.
-- Optimized `app.js` render loop by caching DOM references and using `ResizeObserver`.
+### Security
+- Hardened start-server.sh against shell injection via command-line arguments.
+- Implemented Origin checks in WebSocket server to prevent Cross-Site WebSocket Hijacking (CSWH).
+- Added strict regex-based sanitization for all incoming WebSocket commands.
+- Implemented Content Security Policy (CSP) and security headers (HSTS, X-Frame-Options, etc.).
+- Restricted server bindings to 127.0.0.1 by default.
 
 ### Changed
-- Removed emoji and non-standard formatting from `findings-report.md` for better readability.
-- Improved documentation clarity and structure in `findings-report.md`.
+- Refactored start-server.sh to strictly use the virtual environment.
+- Removed os.chdir() from ws_server.py to prevent global process state mutation.
+- Removed all emojis from the entire codebase, UI, and documentation for a professional text-only experience.
+- Updated README.md with new installation instructions and a link to the manual.
 
-### Added
-- Added `CHANGELOG.md` to track project changes.
+### Fixed
+- Corrected board validation regex in flash.sh.
+- Fixed memory leaks and excessive allocations in the frontend rendering pipeline.

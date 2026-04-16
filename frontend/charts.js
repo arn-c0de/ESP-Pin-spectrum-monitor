@@ -75,15 +75,33 @@ export class RingBuffer {
         if (this.count < this.size) this.count++;
     }
 
-    /** Return the last `n` samples in chronological order. */
+    /** Return the last `n` samples in chronological order (allocates or uses cache). */
     last(n) {
         n = Math.min(n, this.count);
-        const out   = new Float32Array(n);
         const start = ((this.head - n) % this.size + this.size) % this.size;
+        
+        if (!this._cachedArray || this._cachedArray.length !== n) {
+            this._cachedArray = new Float32Array(n);
+        }
+        const out = this._cachedArray;
+        
         for (let i = 0; i < n; i++) {
             out[i] = this.data[(start + i) % this.size];
         }
         return out;
+    }
+
+    /** 
+     * Allocation-free iteration over the last `n` samples.
+     * @param {number} n - Number of samples to read.
+     * @param {(val: number, i: number) => void} callback
+     */
+    forEachLast(n, callback) {
+        n = Math.min(n, this.count);
+        const start = ((this.head - n) % this.size + this.size) % this.size;
+        for (let i = 0; i < n; i++) {
+            callback(this.data[(start + i) % this.size], i);
+        }
     }
 }
 
@@ -116,30 +134,34 @@ export class TimeChart {
         for (const name of visibleChannels) {
             const buf = buffers.get(name);
             if (!buf || buf.count < 2) continue;
-            const raw     = buf.last(nSamples);
-            // Digital channels (0/1): scale to full Y range so they're clearly visible
-            const samples = digitalSet.has(name) ? scaleDigital(raw, adcMax) : raw;
-            this._drawSignal(samples, p, adcMax, colors.get(name) ?? "#ffffff");
+            
+            this._drawSignalOptimized(buf, nSamples, p, adcMax, colors.get(name) ?? "#ffffff", digitalSet.has(name));
         }
 
         this._drawAxes(p, adcMax, timeWindowSec, sampleRateHz);
     }
 
-    _drawSignal(samples, { x0, y0, w, h }, adcMax, color) {
+    _drawSignalOptimized(buf, nSamples, { x0, y0, w, h }, adcMax, color, isDigital) {
         const { ctx } = this;
-        const n     = samples.length;
-        const xStep = w / (n - 1);
+        const nRequested = Math.min(nSamples, buf.count);
+        if (nRequested < 2) return;
+
+        const xStep = w / (nRequested - 1);
+        const lo = adcMax * 0.05;
+        const hi = adcMax * 0.90;
 
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth   = 1.5;
         ctx.lineJoin    = "round";
 
-        for (let i = 0; i < n; i++) {
+        buf.forEachLast(nRequested, (val, i) => {
+            const sample = isDigital ? (val ? hi : lo) : val;
             const x = x0 + i * xStep;
-            const y = y0 + h - (samples[i] / adcMax) * h;
+            const y = y0 + h - (sample / adcMax) * h;
             i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
+        });
+        
         ctx.stroke();
     }
 
