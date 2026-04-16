@@ -64,14 +64,25 @@ This will:
 
 ```
 .
-├── install.sh            # Setup virtual environment
-├── start-server.sh       # Launch bridge and UI
+├── install.sh            # Automated venv and dependency setup
+├── start-server.sh       # Launch bridge and UI (uses venv)
 ├── flash.sh              # Firmware flashing script
 ├── MANUAL.md             # Voltage safety and usage guide
 ├── CHANGELOG.md          # Version history
+├── findings-report.md    # Security and code review findings
 ├── backend/              # Python bridge server
+│   ├── bridge.py         # Entry point
+│   ├── serial_handler.py # Serial communication
+│   ├── ws_server.py      # WebSocket + Secure HTTP server
+│   └── requirements.txt  # Python dependencies
 ├── firmware/             # Microcontroller firmware
-└── frontend/             # Web interface
+│   ├── arduino-uno/      # C++ source for Arduino
+│   └── esp32/            # Rust source for ESP32
+└── frontend/             # Web interface (Vanilla JS)
+    ├── app.js            # Main logic and state
+    ├── charts.js         # Optimized canvas rendering
+    ├── fft.js            # FFT with LUT optimizations
+    └── index.html        # UI structure
 ```
 
 ## Protocol
