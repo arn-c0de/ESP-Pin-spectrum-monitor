@@ -52,7 +52,7 @@ class WSServer:
         webbrowser.open(f"http://localhost:{HTTP_PORT}")
         print(f"[ws]   WebSocket at ws://localhost:{WS_PORT}")
 
-        async with websockets.serve(self._on_client, "0.0.0.0", WS_PORT):
+        async with websockets.serve(self._on_client, "127.0.0.1", WS_PORT):
             await self._broadcast_loop()
 
     # ── HTTP (static files) ────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ class WSServer:
             os.chdir(FRONTEND_DIR)
             handler = SimpleHTTPRequestHandler
             handler.log_message = lambda *_: None   # suppress request logs
-            httpd = HTTPServer(("0.0.0.0", HTTP_PORT), handler)
+            httpd = HTTPServer(("127.0.0.1", HTTP_PORT), handler)
             print(f"[http] Frontend at http://localhost:{HTTP_PORT}")
             httpd.serve_forever()
 
@@ -96,6 +96,11 @@ class WSServer:
             cmd  = msg.get("cmd")
             make = _CMD_MAP.get(cmd)
             if make:
+                # Sanitize inputs to prevent command injection
+                if cmd == "rate":
+                    msg["value"] = str(msg.get("value", "")).replace("\n", "").replace("\r", "")
+                elif cmd in ("pin_enable", "pin_disable"):
+                    msg["name"] = str(msg.get("name", "")).replace("\n", "").replace("\r", "")
                 self.serial.send_command(make(msg))
         except (json.JSONDecodeError, KeyError):
             pass

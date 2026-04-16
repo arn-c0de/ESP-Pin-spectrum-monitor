@@ -75,4 +75,4 @@ info "WebSocket: ws://localhost:8765"
 echo
 
 cd "$BACKEND_DIR"
-exec "$PYTHON" bridge.py $PORT_ARG
+exec "$PYTHON" bridge.py "$PORT_ARG"

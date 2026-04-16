@@ -113,8 +113,9 @@ if [[ -z "$OPT_BOARD" ]]; then
 fi
 
 # Validate board name
-[[ -n "${BOARD_LABEL[$OPT_BOARD]+_}" ]] \
-    || die "Unknown board: '$OPT_BOARD'. Available: ${!BOARD_LABEL[*]}"
+if [[ ! "${!BOARD_LABEL[@]}" =~ (^|[[:space:]])"$OPT_BOARD"($|[[:space:]]) ]]; then
+    die "Unknown board: '$OPT_BOARD'. Available: ${!BOARD_LABEL[*]}"
+fi
 
 SKETCH_DIR="${BOARD_SKETCH_DIR[$OPT_BOARD]}"
 [[ -d "$SKETCH_DIR" ]] \

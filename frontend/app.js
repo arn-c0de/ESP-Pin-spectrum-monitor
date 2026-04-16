@@ -174,16 +174,32 @@ function onData(d) {
 
 // ── Render loop ───────────────────────────────────────────────────────────────
 
+// Cache DOM references for performance
+const timeCanvas = document.getElementById("time-canvas");
+const specCanvas = document.getElementById("spectrum-canvas");
+
 function resizeCanvases() {
-    for (const id of ["time-canvas", "spectrum-canvas"]) {
-        const el  = document.getElementById(id);
-        const dpr = window.devicePixelRatio ?? 1;
-        const w   = el.clientWidth;
-        const h   = el.clientHeight;
-        if (el.width !== w * dpr || el.height !== h * dpr) {
-            el.width  = w * dpr;
-            el.height = h * dpr;
-            el.getContext("2d").scale(dpr, dpr);
+    const dpr = window.devicePixelRatio ?? 1;
+    
+    // Resize time canvas
+    if (timeCanvas) {
+        const w = timeCanvas.clientWidth;
+        const h = timeCanvas.clientHeight;
+        if (timeCanvas.width !== w * dpr || timeCanvas.height !== h * dpr) {
+            timeCanvas.width = w * dpr;
+            timeCanvas.height = h * dpr;
+            timeCanvas.getContext("2d").scale(dpr, dpr);
+        }
+    }
+    
+    // Resize spectrum canvas
+    if (specCanvas) {
+        const w = specCanvas.clientWidth;
+        const h = specCanvas.clientHeight;
+        if (specCanvas.width !== w * dpr || specCanvas.height !== h * dpr) {
+            specCanvas.width = w * dpr;
+            specCanvas.height = h * dpr;
+            specCanvas.getContext("2d").scale(dpr, dpr);
         }
     }
 }
@@ -222,6 +238,15 @@ function renderLoop() {
     );
 
     requestAnimationFrame(renderLoop);
+}
+
+// Use ResizeObserver for efficient canvas resizing
+if (window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => {
+        resizeCanvases();
+    });
+    resizeObserver.observe(timeCanvas);
+    resizeObserver.observe(specCanvas);
 }
 
 // ── Board change ──────────────────────────────────────────────────────────────
