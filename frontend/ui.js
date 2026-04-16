@@ -54,12 +54,13 @@ export function buildBoardSelect(currentBoardId, onBoardChange) {
  * Build clickable colour-coded badges in the time-domain chart header.
  * Clicking a badge toggles the channel's visibility in the graph.
  *
- * @param {string[]}            channelNames
- * @param {Set<string>}         visibleSet
+ * @param {string[]}            channelNames  - All possible channel names from board profile
+ * @param {Set<string>}         visibleSet    - Currently visible channels
  * @param {Map<string, string>} colors
+ * @param {string[]}            channels      - Currently active channels (receiving data)
  * @param {(name:string, visible:boolean) => void} onToggle
  */
-export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
+export function buildTimeLegend(channelNames, visibleSet, colors, channels, onToggle) {
     const container = document.getElementById("time-legend");
     container.innerHTML = "";
 
@@ -69,12 +70,26 @@ export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
         const badge = document.createElement("span");
         badge.className   = "legend-badge";
         badge.dataset.ch  = name;
-        badge.title       = `Click to toggle ${name} (currently ${visibleSet.has(name) ? 'enabled' : 'disabled'})`;
-        if (!visibleSet.has(name)) badge.classList.add("hidden");
+        
+        // Check if this pin is in the active channels list
+        const isActive = channels.includes(name);
+        badge.title       = `Click to toggle ${name} (currently ${visibleSet.has(name) ? 'visible' : 'hidden'}, ${isActive ? 'active' : 'inactive'})`;
+        
+        // Hide if not visible, or dim if not active
+        if (!visibleSet.has(name)) {
+            badge.classList.add("hidden");
+        } else if (!isActive) {
+            badge.classList.add("inactive");
+        }
 
         const dot = document.createElement("span");
         dot.className        = "legend-dot";
         dot.style.background = colors.get(name) ?? "#8b949e";
+        
+        // Dim the dot if channel is not active
+        if (!isActive) {
+            dot.style.opacity = "0.3";
+        }
 
         badge.appendChild(dot);
         badge.appendChild(document.createTextNode(name));
@@ -82,7 +97,10 @@ export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
         badge.addEventListener("click", () => {
             const nowHidden = badge.classList.toggle("hidden");
             const nowVisible = !nowHidden;
-            badge.title = `Click to toggle ${name} (currently ${nowVisible ? 'enabled' : 'disabled'})`;
+            
+            // Update title to reflect new visibility state
+            badge.title = `Click to toggle ${name} (currently ${nowVisible ? 'visible' : 'hidden'}, ${isActive ? 'active' : 'inactive'})`;
+            
             onToggle(name, nowVisible);
         });
 

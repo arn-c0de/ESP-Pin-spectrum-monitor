@@ -98,8 +98,11 @@ function onChannelsUpdate(channels) {
         state.visibleSet.add(name);
     }
 
-    // Rebuild legend
-    buildTimeLegend(channels, state.visibleSet, state.colors, onLegendToggle);
+    // Rebuild legend and spectrum selector
+    // Show ALL pins from board profile in legend, not just active channels
+    const allPinNames = state.board.pins.map(p => p.name);
+    buildTimeLegend(allPinNames, state.visibleSet, state.colors, channels, onLegendToggle);
+    updateSpectrumChannelOptions(channels, state.specChannel);
     
     // Update visibility based on digitalOnly setting
     updateChannelVisibility();
@@ -132,7 +135,9 @@ function updateChannelVisibility() {
     }
     
     state.visibleSet = visible;
-    buildTimeLegend(state.channels, state.visibleSet, state.colors, onLegendToggle);
+    // Show ALL pins from board profile in legend
+    const allPinNames = state.board.pins.map(p => p.name);
+    buildTimeLegend(allPinNames, state.visibleSet, state.colors, state.channels, onLegendToggle);
 }
 
 function onLegendToggle(name, visible) {

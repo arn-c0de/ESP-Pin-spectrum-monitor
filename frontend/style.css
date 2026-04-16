@@ -276,6 +276,8 @@ select {
 .legend-badge:hover          { border-color: #8b949e; }
 .legend-badge.hidden         { opacity: 0.28; }
 .legend-badge.hidden:hover   { opacity: 0.45; }
+.legend-badge.inactive       { opacity: 0.4; }
+.legend-badge.inactive:hover { opacity: 0.6; }
 
 .legend-dot {
     width: 8px;
