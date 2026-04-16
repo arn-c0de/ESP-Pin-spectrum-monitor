@@ -192,3 +192,11 @@ function _syncStreamBtn(btn, streaming) {
     btn.textContent       = streaming ? "⏸ Pause" : "▶ Resume";
     btn.classList.toggle("btn-paused", !streaming);
 }
+
+// ── Digital/Analog toggle ────────────────────────────────────────────────────
+
+export function buildDigitalToggle(digitalOnly, onToggle) {
+    const chk = document.getElementById("digital-toggle");
+    chk.checked = digitalOnly;
+    chk.addEventListener("change", () => onToggle(chk.checked));
+}

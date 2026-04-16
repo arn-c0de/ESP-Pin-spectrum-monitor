@@ -8,7 +8,7 @@ import {
     setConnectionStatus, setPortLabel, setSampleRateDisplay,
     buildBoardSelect, buildRateControls, buildWindowControl,
     buildSpectrumControls, updateSpectrumChannelOptions,
-    buildStreamToggle, buildTimeLegend,
+    buildStreamToggle, buildTimeLegend, buildDigitalToggle,
 } from "./ui.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -36,6 +36,7 @@ const state = {
     specChannel:   null,
     useDb:         true,
     streaming:     true,
+    digitalOnly:   false,       // show only digital channels when true
 
     ws: null,
 };
@@ -106,6 +107,30 @@ function onChannelsUpdate(channels) {
     // Rebuild legend and spectrum selector
     buildTimeLegend(channels, state.visibleSet, state.colors, onLegendToggle);
     updateSpectrumChannelOptions(channels, state.specChannel);
+    
+    // Update visibility based on digitalOnly setting
+    updateChannelVisibility();
+}
+
+function updateChannelVisibility() {
+    const visible = new Set();
+    
+    for (const name of state.channels) {
+        if (name === "t") continue;
+        
+        if (state.digitalOnly) {
+            // Show only digital channels
+            if (state.digitalSet.has(name)) {
+                visible.add(name);
+            }
+        } else {
+            // Show all channels
+            visible.add(name);
+        }
+    }
+    
+    state.visibleSet = visible;
+    buildTimeLegend(state.channels, state.visibleSet, state.colors, onLegendToggle);
 }
 
 function onLegendToggle(name, visible) {
@@ -163,19 +188,23 @@ function renderLoop() {
         state.timeWindowSec,
     );
 
-    if (state.specChannel) {
-        const buf = state.buffers.get(state.specChannel);
-        if (buf?.count > 0) {
-            specChart.render(
-                buf.last(state.fftSize),
-                state.fftSize,
-                state.sampleRateHz,
-                state.board.adcMax,
-                state.colors.get(state.specChannel) ?? "#4fc3f7",
-                state.useDb,
-            );
-        }
-    }
+    // Spectrum: all visible analog channels overlaid
+    const specChannels = visible
+        .filter(n => !state.digitalSet.has(n))
+        .map(n => ({
+            name:    n,
+            samples: state.buffers.get(n)?.last(state.fftSize) ?? null,
+            color:   state.colors.get(n) ?? "#4fc3f7",
+        }))
+        .filter(c => c.samples !== null);
+
+    specChart.render(
+        specChannels,
+        state.fftSize,
+        state.sampleRateHz,
+        state.board.adcMax,
+        state.useDb,
+    );
 
     requestAnimationFrame(renderLoop);
 }
@@ -195,6 +224,11 @@ function onBoardChange(boardId) {
     state._lastTs     = null;
     state.sampleRateHz = board.defaultSampleRate;
     sendCmd({ cmd: "header" });
+}
+
+function onDigitalToggle(digitalOnly) {
+    state.digitalOnly = digitalOnly;
+    updateChannelVisibility();
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -221,6 +255,8 @@ function init() {
         state.streaming = on;
         sendCmd({ cmd: on ? "start" : "stop" });
     });
+
+    buildDigitalToggle(state.digitalOnly, onDigitalToggle);
 
     connect();
     requestAnimationFrame(renderLoop);
