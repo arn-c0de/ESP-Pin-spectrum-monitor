@@ -1,6 +1,10 @@
-# ESP Pin Spectrum Monitor
+# ESP Pin Spectrum Monitor (Private Testing)
+
+**This repository is for private testing and evaluation purposes only.**
 
 A real-time GPIO monitoring and spectrum analysis tool for Arduino and ESP32 boards.
+
+**Current Version: 1.0.1**
 
 ## Features
 

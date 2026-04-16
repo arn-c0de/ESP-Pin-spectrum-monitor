@@ -1,0 +1,46 @@
+# Compiled files
+*.elf
+*.hex
+*.bin
+*.o
+*.a
+*.lib
+*.so
+*.dll
+
+# Build directories
+build/
+bin/
+obj/
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*
+*.env
+
+# Private keys and secrets
+*.key
+*.pem
+*.secret
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Dependency directories
+node_modules/
+venv/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
