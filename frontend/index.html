@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPIO Monitor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+    <!-- ── Header ──────────────────────────────────────────────────────────── -->
+    <header id="header">
+        <h1>GPIO Monitor</h1>
+        <div id="status-indicator">
+            <span id="status-dot"></span>
+            <span id="status-badge">Connecting…</span>
+            <span id="port-label"></span>
+        </div>
+        <span id="rate-display">— Hz</span>
+        <select id="board-select" title="Select board profile"></select>
+    </header>
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+    <aside id="sidebar">
+
+        <!-- Channels -->
+        <div class="panel">
+            <div class="panel-title">Channels</div>
+            <div id="channel-list">
+                <span style="color:var(--muted);font-size:11px">Waiting for device…</span>
+            </div>
+        </div>
+
+        <!-- Sample rate -->
+        <div class="panel">
+            <div class="panel-title">Sample Rate</div>
+            <div class="control-row">
+                <span class="control-label">Hz</span>
+                <input id="rate-slider" type="range" min="1" max="500" step="1" value="50">
+                <input id="rate-input"  type="number" min="1" max="500" value="50">
+            </div>
+        </div>
+
+        <!-- Time window -->
+        <div class="panel">
+            <div class="panel-title">Time Window</div>
+            <div class="control-row">
+                <span class="control-label">Sec</span>
+                <input id="window-slider" type="range" min="1" max="30" step="1" value="5">
+                <span  id="window-label" style="font-size:12px;width:28px;text-align:right">5s</span>
+            </div>
+        </div>
+
+        <!-- Stream control -->
+        <div class="panel">
+            <button id="stream-toggle">⏸ Pause</button>
+        </div>
+
+    </aside>
+
+    <!-- ── Charts ──────────────────────────────────────────────────────────── -->
+    <section id="charts">
+
+        <!-- Time domain -->
+        <div class="chart-panel">
+            <div class="chart-header">
+                <h2>Time Domain</h2>
+            </div>
+            <canvas id="time-canvas"></canvas>
+        </div>
+
+        <!-- Spectrum analyzer -->
+        <div class="chart-panel">
+            <div class="chart-header">
+                <h2>Spectrum Analyzer</h2>
+                <select id="spectrum-channel" title="Channel to analyse"></select>
+                <select id="fft-size" title="FFT window size">
+                    <option value="128">128</option>
+                    <option value="256">256</option>
+                    <option value="512" selected>512</option>
+                    <option value="1024">1024</option>
+                </select>
+                <label title="Show in dBFS instead of linear">
+                    <input id="db-toggle" type="checkbox" checked> dBFS
+                </label>
+            </div>
+            <canvas id="spectrum-canvas"></canvas>
+        </div>
+
+    </section>
+
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
