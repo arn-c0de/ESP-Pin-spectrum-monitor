@@ -29,6 +29,14 @@
             <div class="panel-title">Sample Rate</div>
             <div class="control-row">
                 <span class="control-label">Hz</span>
+                <select id="rate-presets" title="Predefined sample rates">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50" selected>50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="500">500</option>
+                </select>
                 <input id="rate-slider" type="range" min="1" max="500" step="1" value="50">
                 <input id="rate-input"  type="number" min="1" max="500" value="50">
             </div>

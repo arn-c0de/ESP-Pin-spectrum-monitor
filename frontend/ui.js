@@ -91,26 +91,30 @@ export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
 // ── Rate controls ─────────────────────────────────────────────────────────────
 
 /**
- * Wire up the sample-rate slider + number input.
- * Both stay in sync. Calls onRateChange(ms) when the value changes.
+ * Wire up the sample-rate slider + number input + preset dropdown.
+ * All stay in sync. Calls onRateChange(ms) when the value changes.
  */
 export function buildRateControls(currentHz, onRateChange) {
     const slider = document.getElementById("rate-slider");
     const input  = document.getElementById("rate-input");
+    const preset = document.getElementById("rate-presets");
 
     // slider is in Hz
     slider.value = currentHz;
     input.value  = currentHz;
+    preset.value = currentHz;
 
     function emit() {
         const hz = Math.max(1, Math.min(500, parseInt(slider.value, 10)));
         slider.value = hz;
         input.value  = hz;
+        preset.value = hz;
         onRateChange(hz);
     }
 
     slider.addEventListener("input",  emit);
     input.addEventListener("change",  () => { slider.value = input.value; emit(); });
+    preset.addEventListener("change", () => { slider.value = preset.value; emit(); });
 }
 
 // ── Time window control ───────────────────────────────────────────────────────
