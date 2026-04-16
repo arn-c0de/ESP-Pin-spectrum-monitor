@@ -45,8 +45,6 @@ jobs:
         include:
         - language: actions
           build-mode: none
-        - language: c-cpp
-          build-mode: none
         - language: javascript-typescript
           build-mode: none
         - language: python
@@ -103,3 +101,28 @@ jobs:
       uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
+
+  analyze-cpp:
+    name: Analyze C/C++ (Arduino)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL for C/C++
+      uses: github/codeql-action/init@v4
+      with:
+        languages: c-cpp
+        build-mode: none
+        queries: security-extended,security-and-quality
+
+    - name: Perform CodeQL Analysis for C/C++
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: "/language:c-cpp"
