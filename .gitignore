@@ -38,6 +38,13 @@ obj/
 # Dependency directories
 node_modules/
 venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # macOS
 .DS_Store

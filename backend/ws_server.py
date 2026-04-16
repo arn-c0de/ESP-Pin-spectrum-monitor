@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import threading
 import webbrowser
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -52,25 +53,48 @@ class WSServer:
         webbrowser.open(f"http://localhost:{HTTP_PORT}")
         print(f"[ws]   WebSocket at ws://localhost:{WS_PORT}")
 
-        async with websockets.serve(self._on_client, "0.0.0.0", WS_PORT):
+        async with websockets.serve(self._on_client, "127.0.0.1", WS_PORT):
             await self._broadcast_loop()
 
     # ── HTTP (static files) ────────────────────────────────────────────────────
 
     def _start_http_server(self) -> None:
         def _run() -> None:
-            os.chdir(FRONTEND_DIR)
-            handler = SimpleHTTPRequestHandler
+            # Custom handler to add security headers and serve from FRONTEND_DIR
+            # Using the 'directory' argument available in Python 3.7+
+            class CSPHandler(SimpleHTTPRequestHandler):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, directory=str(FRONTEND_DIR), **kwargs)
+
+                def end_headers(self):
+                    # Add Content Security Policy
+                    self.send_header("Content-Security-Policy", 
+                                   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws://localhost:* ws://127.0.0.1:*; font-src 'self'")
+                    self.send_header("X-Content-Type-Options", "nosniff")
+                    self.send_header("X-Frame-Options", "DENY")
+                    self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+                    super().end_headers()
+            
+            handler = CSPHandler
             handler.log_message = lambda *_: None   # suppress request logs
-            httpd = HTTPServer(("0.0.0.0", HTTP_PORT), handler)
-            print(f"[http] Frontend at http://localhost:{HTTP_PORT}")
-            httpd.serve_forever()
+            try:
+                self.httpd = HTTPServer(("127.0.0.1", HTTP_PORT), handler)
+                print(f"[http] Frontend at http://localhost:{HTTP_PORT}")
+                self.httpd.serve_forever()
+            except Exception as e:
+                print(f"[http] Server stopped: {e}")
 
         threading.Thread(target=_run, daemon=True, name="http-server").start()
 
     # ── WebSocket client lifecycle ─────────────────────────────────────────────
 
     async def _on_client(self, ws) -> None:
+        # Check Origin header for CSWH protection
+        origin = ws.request_headers.get("Origin")
+        if origin and not origin.startswith("http://localhost:") and not origin.startswith("http://127.0.0.1:"):
+            print(f"[ws] Rejected connection from unauthorized origin: {origin}")
+            return
+        
         self.clients.add(ws)
         print(f"[ws] Client connected  (total: {len(self.clients)})")
 
@@ -96,6 +120,19 @@ class WSServer:
             cmd  = msg.get("cmd")
             make = _CMD_MAP.get(cmd)
             if make:
+                # Sanitize inputs to prevent command injection
+                if cmd == "rate":
+                    value = str(msg.get("value", "")).replace("\n", "").replace("\r", "")
+                    # Use regex to enforce strict numeric format
+                    if not re.match(r'^[0-9]+$', value):
+                        return
+                    msg["value"] = value
+                elif cmd in ("pin_enable", "pin_disable"):
+                    name = str(msg.get("name", "")).replace("\n", "").replace("\r", "")
+                    # Use regex to enforce alphanumeric format
+                    if not re.match(r'^[a-zA-Z0-9_]+$', name):
+                        return
+                    msg["name"] = name
                 self.serial.send_command(make(msg))
         except (json.JSONDecodeError, KeyError):
             pass

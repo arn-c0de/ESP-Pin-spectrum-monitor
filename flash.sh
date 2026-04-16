@@ -112,9 +112,15 @@ if [[ -z "$OPT_BOARD" ]]; then
     done
 fi
 
-# Validate board name
-[[ -n "${BOARD_LABEL[$OPT_BOARD]+_}" ]] \
-    || die "Unknown board: '$OPT_BOARD'. Available: ${!BOARD_LABEL[*]}"
+# Validate board name more strictly to prevent directory traversal
+if [[ -z "$OPT_BOARD" ]] || [[ ! "${!BOARD_LABEL[@]}" =~ (^|[[:space:]])"$OPT_BOARD"($|[[:space:]]) ]]; then
+    die "Unknown board: '$OPT_BOARD'. Available: ${!BOARD_LABEL[*]}"
+fi
+
+# Additional validation: ensure board name only contains safe characters
+if [[ "$OPT_BOARD" =~ [^/\\] ]]; then
+    die "Invalid board name: '$OPT_BOARD' contains unsafe characters"
+fi
 
 SKETCH_DIR="${BOARD_SKETCH_DIR[$OPT_BOARD]}"
 [[ -d "$SKETCH_DIR" ]] \
