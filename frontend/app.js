@@ -112,13 +112,22 @@ function updateChannelVisibility() {
         if (name === "t") continue;
         
         if (state.digitalOnly) {
-            // Show only digital channels
+            // Show only digital channels that are in our digital set
             if (state.digitalSet.has(name)) {
                 visible.add(name);
             }
         } else {
             // Show all channels
             visible.add(name);
+        }
+    }
+    
+    // If digital only mode and no digital channels visible, show all digital pins from board profile
+    if (state.digitalOnly && visible.size === 0) {
+        for (const pin of state.board.pins) {
+            if (!pin.analog && state.channels.includes(pin.name)) {
+                visible.add(pin.name);
+            }
         }
     }
     
