@@ -119,17 +119,25 @@ void setup() {
 
     // Default channel map — Arduino Uno
     // Analog inputs  A0-A3 active by default, A4-A5 available but off
-    // Digital inputs D2, D3, D4, D13 active by default
+    // Digital inputs D2-D13 available but off by default (can be enabled via PIN+ command)
     addChannel(A0,  "A0",  true,  true);
     addChannel(A1,  "A1",  true,  true);
     addChannel(A2,  "A2",  true,  true);
     addChannel(A3,  "A3",  true,  true);
     addChannel(A4,  "A4",  true,  false);
     addChannel(A5,  "A5",  true,  false);
-    addChannel(2,   "D2",  false, true);
-    addChannel(3,   "D3",  false, true);
-    addChannel(4,   "D4",  false, true);
-    addChannel(13,  "D13", false, true);
+    addChannel(2,   "D2",  false, false);
+    addChannel(3,   "D3",  false, false);
+    addChannel(4,   "D4",  false, false);
+    addChannel(5,   "D5",  false, false);
+    addChannel(6,   "D6",  false, false);
+    addChannel(7,   "D7",  false, false);
+    addChannel(8,   "D8",  false, false);
+    addChannel(9,   "D9",  false, false);
+    addChannel(10,  "D10", false, false);
+    addChannel(11,  "D11", false, false);
+    addChannel(12,  "D12", false, false);
+    addChannel(13,  "D13", false, false);
 
     sendHeader();
 }

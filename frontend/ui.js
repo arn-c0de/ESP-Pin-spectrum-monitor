@@ -69,7 +69,7 @@ export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
         const badge = document.createElement("span");
         badge.className   = "legend-badge";
         badge.dataset.ch  = name;
-        badge.title       = `Click to show/hide ${name}`;
+        badge.title       = `Click to toggle ${name} (currently ${visibleSet.has(name) ? 'enabled' : 'disabled'})`;
         if (!visibleSet.has(name)) badge.classList.add("hidden");
 
         const dot = document.createElement("span");
@@ -81,7 +81,9 @@ export function buildTimeLegend(channelNames, visibleSet, colors, onToggle) {
 
         badge.addEventListener("click", () => {
             const nowHidden = badge.classList.toggle("hidden");
-            onToggle(name, !nowHidden);
+            const nowVisible = !nowHidden;
+            badge.title = `Click to toggle ${name} (currently ${nowVisible ? 'enabled' : 'disabled'})`;
+            onToggle(name, nowVisible);
         });
 
         container.appendChild(badge);

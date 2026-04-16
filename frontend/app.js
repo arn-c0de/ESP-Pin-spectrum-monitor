@@ -125,7 +125,7 @@ function updateChannelVisibility() {
     // If digital only mode and no digital channels visible, show all digital pins from board profile
     if (state.digitalOnly && visible.size === 0) {
         for (const pin of state.board.pins) {
-            if (!pin.analog && state.channels.includes(pin.name)) {
+            if (!pin.analog) {
                 visible.add(pin.name);
             }
         }
@@ -136,7 +136,15 @@ function updateChannelVisibility() {
 }
 
 function onLegendToggle(name, visible) {
-    visible ? state.visibleSet.add(name) : state.visibleSet.delete(name);
+    if (visible) {
+        state.visibleSet.add(name);
+        // Send PIN+ command to enable this channel in firmware
+        sendCmd({ cmd: "pin_enable", name: name });
+    } else {
+        state.visibleSet.delete(name);
+        // Send PIN- command to disable this channel in firmware
+        sendCmd({ cmd: "pin_disable", name: name });
+    }
 }
 
 // ── Incoming data ─────────────────────────────────────────────────────────────
