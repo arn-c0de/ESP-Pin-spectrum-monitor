@@ -1,0 +1,19 @@
+name: "CodeQL Config"
+
+disable-default-queries: false
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths:
+  - backend
+  - frontend
+  - firmware
+
+paths-ignore:
+  - "**/node_modules/**"
+  - "**/__pycache__/**"
+  - "**/.git/**"
+  - "**/test/**"
+  - "**/tests/**"
